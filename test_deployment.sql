@@ -1,0 +1,31 @@
+--  Call the procedure to generate metrics
+CALL CONTROL.CODE.DATA_QUALITY('POKEMON', 'PLATFORM', 'CORE');
+
+-- Create a temporary table to hold the metrics
+CREATE OR REPLACE TEMP TABLE CORE.PLATFORM.METRICS_TEMP AS(SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID())));
+
+-- Raise Error On Primary Key Duplicates
+DECLARE 
+METRIC_TO_CHECK NUMBER DEFAULT MAX(select value from CORE.PLATFORM.METRICS_TEMP where metric_name='DUPLICATE_COUNT');
+CHECK_FAIL EXCEPTION (-20002, 'Duplicates Found');
+BEGIN
+  LET METRIC_VAL := METRIC_TO_CHECK;
+  IF (METRIC_VAL > 0) THEN
+    RAISE CHECK_FAIL;
+  ELSE
+    RETURN 'No Data Quality Errors';
+  END IF;
+END;
+
+-- Raise Error On Null Values
+DECLARE 
+METRIC_TO_CHECK NUMBER DEFAULT MAX(select value from CORE.PLATFORM.METRICS_TEMP where metric_name='NULL_COUNT');
+CHECK_FAIL EXCEPTION (-20002, 'Null Values Found');
+BEGIN
+  LET METRIC_VAL := METRIC_TO_CHECK;
+  IF (METRIC_VAL > 0) THEN
+    RAISE CHECK_FAIL;
+  ELSE
+    RETURN 'No Data Quality Errors';
+  END IF;
+END;
